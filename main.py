@@ -1,6 +1,7 @@
 import telebot
+from extensions import APIException, Convertor
 from config import *
-from extensions import Convertor
+import traceback
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -16,16 +17,26 @@ def help(message: telebot.types.Message):
 @bot.message_handler(commands=['values'])
 def values(message: telebot.types.Message):
     text = 'Доступные валюты:'
-    for i in exchanges.keys():
-        text = '\n'.join((text, i))
+    for i in keys.keys():
+        text = '\n'.join((text, i, ))
     bot.reply_to(message, text)
 
 
 @bot.message_handler(content_types=['text'])
 def converter(message: telebot.types.Message):
-    base, sym, amount = message.text.split()
-    new_price = Convertor.get_price(base, sym, amount)
-    bot.reply_to(message, f"Цена {amount} {base} в {sym} : {new_price}")
+    values = message.text.split(' ')
+    try:
+        if len(values) != 3:
+            raise APIException('Неверное количество параметров!')
+        quote, base, amount = values
+        total_base = Convertor.convert(quote, base, amount)
+    except APIException as e:
+        bot.reply_to(message, f"Ошибка в команде:\n{e}")
+    except Exception as e:
+        traceback.print_tb(e.__traceback__)
+        bot.reply_to(message, f"Неизвестная ошибка:\n{e}")
+    else:
+        bot.reply_to(message, total_base)
 
 
 bot.polling()
