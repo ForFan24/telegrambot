@@ -1,7 +1,6 @@
 import telebot
-import requests
-import json
 from config import *
+from extensions import Convertor
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -25,9 +24,7 @@ def values(message: telebot.types.Message):
 @bot.message_handler(content_types=['text'])
 def converter(message: telebot.types.Message):
     base, sym, amount = message.text.split()
-    r = requests.get(f"https://api.exchangeratesapi.io/latest?base={base}&symbols={sym}")
-    resp = json.loads(r.content)
-    new_price = resp['rates'][sym] * float(amount)
+    new_price = Convertor.get_price(base, sym, amount)
     bot.reply_to(message, f"Цена {amount} {base} в {sym} : {new_price}")
 
 
